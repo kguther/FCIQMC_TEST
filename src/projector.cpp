@@ -1,5 +1,6 @@
 #include "projector.h"
 #include <random>
+#include <math.h>
 #include <iostream>
 
 double abv(double x){
@@ -45,10 +46,11 @@ void projector::spawn(){
     for(int j=0;j<numSpawns;++j){
       newWalkers.push_back(walker(target,newSign));
 
+      /*
       std::cout<<"Spawned new walker with sign "<<newSign<<" at ";
       printState(target);
       std::cout<<std::endl;
-
+      */
     }
   }
 }
@@ -69,14 +71,14 @@ void projector::death(){
       if(pDeath<0){
         newWalkers.push_back(walker(ensemble[i].getDeterminant(),-ensemble[i].getSign()));
 	
-	std::cout<<"Cloned walker\n";
+	//std::cout<<"Cloned walker\n";
 
       }
       else{
 	ensemble.erase(ensemble.begin()+i);
 	--i;
 
-	std::cout<<"Killed walker\n";
+	//std::cout<<"Killed walker\n";
 
       }
     }
@@ -89,9 +91,10 @@ void projector::annihilate(){
     for(unsigned int j=i+1;j<newWalkers.size();++j){
       if(checkAnnihilation(newWalkers[i],newWalkers[j])){
 	newWalkers.erase(newWalkers.begin()+j);
+	//j>i -> newWalkers.begin()+i is still the same element
 	newWalkers.erase(newWalkers.begin()+i);
 	
-	std::cout<<"Annihilated walkers\n";
+	//std::cout<<"Annihilated walkers\n";
 	
 	--i;
 	break;
@@ -105,7 +108,7 @@ void projector::annihilate(){
 	ensemble.erase(ensemble.begin()+j);
 	newWalkers.erase(newWalkers.begin()+i);
 	
-	std::cout<<"Annihilated walkers\n";
+	//std::cout<<"Annihilated walkers\n";
 	
 	--i;
 	break;
@@ -116,6 +119,36 @@ void projector::annihilate(){
   ensemble.insert(ensemble.end(),newWalkers.begin(),newWalkers.end());
   //and clear the newWalkers
   newWalkers.clear();
+}
+
+void projector::updateShift(){
+  double S=pars.getS();
+  double const dt=pars.getTimeStep()*pars.getA();
+  std::cout<<ensemble.size()<<" vs "<<ensembleSizeBackup<<std::endl;
+  S-=pars.getDamping()/dt*log(ensemble.size()/static_cast<double>(ensembleSizeBackup));
+  pars.setS(S);
+  ensembleSizeBackup=ensemble.size();
+}
+
+void projector::fullProjection(unsigned int numSteps, unsigned int targetNumber){
+  int constN=0;
+  int adaptionCounter=0;
+  for(unsigned int i=0;i<numSteps;++i){
+    prStep();
+    if(ensemble.size()>=targetNumber && !constN){
+      constN=1;
+      ensembleSizeBackup=ensemble.size();
+    }
+    if(constN){
+      ++adaptionCounter;
+      if(adaptionCounter%pars.getA()==0){
+	updateShift();
+	std::cout<<"New shift: "<<pars.getS()<<std::endl;
+	std::cout<<"Number of walkers: "<<ensemble.size()<<std::endl;
+	adaptionCounter=0;
+      }
+    }
+  }
 }
     
 void printEnsemble(std::vector<walker> const &ensemble){

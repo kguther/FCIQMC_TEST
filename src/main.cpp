@@ -13,7 +13,7 @@ hamiltonian generateHubbard(int dim, double U, double t);
 int main(int argc, char **argv){
   int const L=6;
   int const sysSize=2*L;
-  parData testData(0.0,0.01);
+  parData testData(0.01,0.01,5,0.1);
   double U=0.1;
   double t=1;
   basisState testState=generateRandomState(sysSize);
@@ -30,9 +30,10 @@ int main(int argc, char **argv){
   std::cout<<std::endl;
   std::cout<<Hubbard.getMatrixElement(testComp,testState)<<std::endl;
   */
-  for(int i=0;i<100;++i){
-    testSys.prStep();
-  }
+  testSys.fullProjection(10000U,100U);
+  std::cout<<"Initial ";
+  printState(testState);
+  std::cout<<std::endl;
   
 }
 

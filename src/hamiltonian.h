@@ -20,6 +20,7 @@ class hamiltonian{
 };
 
 basisState getRandomCoupledState(basisState const &source, double &p);
+//basically counts the number of particles between annihilatorIndex and creatorIndex in alpha, yielding the sign of a^\dagger_i a_j (alpha) in the canonical operator ordering
 int getFermiSign(basisState const &alpha, int annihilatorIndex, int creatorIndex);
 
 #endif

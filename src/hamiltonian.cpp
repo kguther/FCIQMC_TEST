@@ -53,6 +53,7 @@ double hamiltonian::getMatrixElement(basisState const &alpha, basisState const &
   }
   if(holes.size()==0){
     double diagonalTerm=0.0;
+    //there is no sign in the diagonal term since all appearing operators are bosonic (a_i^\dagger a_i)
     for(unsigned int i=0;i<same.size();++i){
       //all contributions if alpha==beta
       diagonalTerm+=oneBodyEntries[same[i]+d*same[i]];
@@ -64,13 +65,13 @@ double hamiltonian::getMatrixElement(basisState const &alpha, basisState const &
     return diagonalTerm;
   }
   int fermiSign=-1;
-  fermiSign*=getFermiSign(beta,holes[0],excitations[0]);
-  basisState proxy=beta;
-  proxy.removeParticle(holes[0]);
-  proxy.addParticle(excitations[0]);
-  fermiSign*=getFermiSign(proxy,holes[1],excitations[1]);
-
+  //Sign for conversion to canonical form
   if(holes.size()==2){
+    fermiSign*=getFermiSign(beta,holes[0],excitations[0]);
+    basisState proxy=beta;
+    proxy.removeParticle(holes[0]);
+    proxy.addParticle(excitations[0]);
+    fermiSign*=getFermiSign(proxy,holes[1],excitations[1]);
     //it is always holes[1]>holes[0] and excitations[1]>excitations[0]
     //take into account fermi sign due to states with indices between holes[0] and holes[1]
     return fermiSign*twoBodyEntries[holes[0]+d*holes[1]+d*d*excitations[0]+d*d*d*excitations[1]];
