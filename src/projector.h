@@ -10,7 +10,7 @@ void printEnsemble(std::vector<walker> const &ensemble);
 
 class projector{
  public:
-  projector(hamiltonian const &H, basisState const &initialState, parData const &pars);
+  projector(hamiltonian const &H, std::vector<basisState> const &initialState, parData const &pars);
   void fullProjection(unsigned int numSteps, unsigned int targetNumber);
   void prStep(){spawn();death();annihilate();}
   void spawn();
@@ -24,7 +24,7 @@ class projector{
   parData pars;
   std::vector<walker> ensemble;
   std::vector<walker> newWalkers;
-  std::vector<basisState> initiators;
+  int initiatorThreshold;
   int ensembleSizeBackup;
 };
 

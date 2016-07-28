@@ -19,6 +19,8 @@ class basisState{
   std::vector<int> occupations_;
 };
 
+bool compareDeterminants(basisState const &a, basisState const &b);
+
 basisState generateRandomState(int nOrbitals);
 inline bool operator==(basisState const &a, basisState const &b){
   if(a.getBasisSize()!=b.getBasisSize()){

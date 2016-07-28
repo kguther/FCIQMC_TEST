@@ -1,5 +1,6 @@
 #include <random>
 #include <iostream>
+#include <cmath>
 #include "basisState.h"
 
 basisState generateRandomState(int nOrbitals){
@@ -19,6 +20,16 @@ basisState generateRandomState(int nOrbitals){
     randomState.setOccupation(iOrbital,newOccupation);
   }
   return randomState;
+}
+
+bool compareDeterminants(basisState const &a, basisState const &b){
+  for(int i=0;i<a.getBasisSize();++i){
+    if(a.getOccupation(i)>b.getOccupation(i))
+      return false;
+    if(a.getOccupation(i)<b.getOccupation(i))
+      return true;
+  }
+  return false;
 }
 
 void printState(basisState const &a){

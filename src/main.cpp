@@ -13,7 +13,7 @@ hamiltonian generateHubbard(int dim, double U, double t);
 int main(int argc, char **argv){
   int const L=6;
   int const sysSize=2*L;
-  parData testData(0.01,0.01,5,0.1);
+  parData testData(0.01,0.01,5,0.1,2);
   double U=0.1;
   double t=1;
   basisState testState=generateRandomState(sysSize);
@@ -21,7 +21,9 @@ int main(int argc, char **argv){
   printState(testState);
   std::cout<<std::endl;
   hamiltonian Hubbard=generateHubbard(sysSize,U,t);
-  projector testSys(Hubbard,testState,testData);
+  std::vector<basisState> testStateVec;
+  testStateVec.push_back(testState);
+  projector testSys(Hubbard,testStateVec,testData);
   /*
   double p;
   basisState testComp=getRandomCoupledState(testState,p);

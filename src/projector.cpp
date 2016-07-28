@@ -2,6 +2,7 @@
 #include <random>
 #include <math.h>
 #include <iostream>
+#include <algorithm>
 
 double abv(double x){
   if(x>0)
@@ -9,11 +10,30 @@ double abv(double x){
   return -x;
 }
 
-projector::projector(hamiltonian const &HIn, basisState const &initialState, parData const &parsIn):
+int getWalkerNumber(std::vector<walker> const &sortedEnsemble, int pos){
+  int numI=1;
+  for(int j=pos-1;j>=0;--j){
+    if(!(sortedEnsemble[j]==sortedEnsemble[pos]))
+      break;
+    ++numI;
+  }
+  for(unsigned int j=pos+1;j<sortedEnsemble.size();++j){
+    if(!(sortedEnsemble[j]==sortedEnsemble[pos]))
+      break;
+    ++numI;
+  }
+  return numI;
+}
+
+projector::projector(hamiltonian const &HIn, std::vector<basisState> const &initialStates, parData const &parsIn):
   H(HIn),
   pars(parsIn)
 {
-  ensemble.push_back(walker(initialState,1));
+  for(unsigned int i=0;i<initialStates.size();++i){
+    for(int j=0;j<pars.getInitiatorThreshold()+1;++j){
+      ensemble.push_back(walker(initialStates[i],1));
+    }
+  }
 }
 
 void projector::spawn(){
@@ -24,33 +44,38 @@ void projector::spawn(){
   double const normalizer=static_cast<double>(rng.max());
   double randNum, matrixElement;
   int numSpawns;
+  int walkerNumber;
+  int const initiatorThreshold=pars.getInitiatorThreshold();
   for(unsigned int i=0;i<ensemble.size();++i){
-    numSpawns=0;
-    source=ensemble[i].getDeterminant();
-    target=getRandomCoupledState(source,p);
-    matrixElement=H.getMatrixElement(source,target);
-    pSpawn=timeStep/p*abv(matrixElement);
-    randNum=rng()/normalizer;
-    numSpawns+=floor(pSpawn);
-    pSpawn-=floor(pSpawn);
-    if(randNum<pSpawn){
-      ++numSpawns;
-    }
-    int newSign;
-    if(matrixElement>0){
-      newSign=ensemble[i].getSign();
-    }
-    else{
-      newSign=-ensemble[i].getSign();
-    }
-    for(int j=0;j<numSpawns;++j){
-      newWalkers.push_back(walker(target,newSign));
+    walkerNumber=std::count(ensemble.begin(),ensemble.end(),ensemble[i]);
+    if(walkerNumber>initiatorThreshold){
+      numSpawns=0;
+      source=ensemble[i].getDeterminant();
+      target=getRandomCoupledState(source,p);
+      matrixElement=H.getMatrixElement(source,target);
+      pSpawn=timeStep/p*abv(matrixElement);
+      randNum=rng()/normalizer;
+      numSpawns+=floor(pSpawn);
+      pSpawn-=floor(pSpawn);
+      if(randNum<pSpawn){
+	++numSpawns;
+      }
+      int newSign;
+      if(matrixElement>0){
+	newSign=ensemble[i].getSign();
+      }
+      else{
+	newSign=-ensemble[i].getSign();
+      }
+      for(int j=0;j<numSpawns;++j){
+	newWalkers.push_back(walker(target,newSign));
 
-      /*
-      std::cout<<"Spawned new walker with sign "<<newSign<<" at ";
-      printState(target);
-      std::cout<<std::endl;
-      */
+	/*
+	  std::cout<<"Spawned new walker with sign "<<newSign<<" at ";
+	  printState(target);
+	  std::cout<<std::endl;
+	*/
+      }
     }
   }
 }
@@ -116,7 +141,14 @@ void projector::annihilate(){
     }
   }
   //finally, merge the newWalkers into the ensemble
-  ensemble.insert(ensemble.end(),newWalkers.begin(),newWalkers.end());
+  //ensemble.insert(ensemble.end(),newWalkers.begin(),newWalkers.end());
+  std::vector<walker>::iterator destination;
+  //to keep the ensemble sorted, each new walker is inserted at the position corresponding to its binary value
+  for(unsigned int m=0;m<newWalkers.size();++m){
+    walker cWalker(newWalkers[m]);
+    destination=std::lower_bound(ensemble.begin(),ensemble.end(),cWalker);
+    ensemble.insert(destination,cWalker);
+  }
   //and clear the newWalkers
   newWalkers.clear();
 }
