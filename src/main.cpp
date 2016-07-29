@@ -13,9 +13,10 @@ hamiltonian generateHubbard(int dim, double U, double t);
 int main(int argc, char **argv){
   int const L=6;
   int const sysSize=2*L;
-  parData testData(0.01,0.01,5,0.1,2);
+  parData testData(0.01,0.01,2,0.2,2);
   double U=0.1;
   double t=1;
+  std::vector<int> occupations;
   basisState testState=generateRandomState(sysSize);
   std::cout<<"Initial ";
   printState(testState);
