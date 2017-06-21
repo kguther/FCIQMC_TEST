@@ -17,6 +17,7 @@ class projector{
   void death();
   void annihilate();
   void updateShift();
+  void updateAveragedShift(unsigned int i);
   //for testing purpose
   void printDeterminants() const{printEnsemble(ensemble);}
  private:
@@ -24,6 +25,7 @@ class projector{
   parData pars;
   std::vector<walker> ensemble;
   std::vector<walker> newWalkers;
+  double averagedShift;
   int initiatorThreshold;
   int ensembleSizeBackup;
 };

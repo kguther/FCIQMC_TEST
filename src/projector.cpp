@@ -11,7 +11,7 @@ double abv(double x){
 }
 
 int getWalkerNumber(std::vector<walker> const &sortedEnsemble, int pos){
-  int numI=1;
+  int numI{1};
   for(int j=pos-1;j>=0;--j){
     if(!(sortedEnsemble[j]==sortedEnsemble[pos]))
       break;
@@ -27,10 +27,11 @@ int getWalkerNumber(std::vector<walker> const &sortedEnsemble, int pos){
 
 projector::projector(hamiltonian const &HIn, std::vector<basisState> const &initialStates, parData const &parsIn):
   H(HIn),
-  pars(parsIn)
+  pars(parsIn),
+  averagedShift(0.0)
 {
   for(unsigned int i=0;i<initialStates.size();++i){
-    for(int j=0;j<pars.getInitiatorThreshold()+1;++j){
+    for(int j=0;j<pars.getInitiatorThreshold()+5;++j){
       ensemble.push_back(walker(initialStates[i],1));
     }
   }
@@ -69,12 +70,6 @@ void projector::spawn(){
       }
       for(int j=0;j<numSpawns;++j){
 	newWalkers.push_back(walker(target,newSign));
-
-	/*
-	  std::cout<<"Spawned new walker with sign "<<newSign<<" at ";
-	  printState(target);
-	  std::cout<<std::endl;
-	*/
       }
     }
   }
@@ -86,7 +81,7 @@ void projector::death(){
   double const timeStep=pars.getTimeStep();
   double const S=pars.getS();
   std::random_device rng;
-  double const normalizer=static_cast<double>(rng.max());
+  double const normalizer{static_cast<double>(rng.max())};
   for(unsigned int i=0;i<ensemble.size();++i){
     source=ensemble[i].getDeterminant();
     matrixElement=H.getMatrixElement(source,source);
@@ -95,15 +90,11 @@ void projector::death(){
     if(randNum<abv(pDeath)){
       if(pDeath<0){
         newWalkers.push_back(walker(ensemble[i].getDeterminant(),-ensemble[i].getSign()));
-	
-	//std::cout<<"Cloned walker\n";
 
       }
       else{
 	ensemble.erase(ensemble.begin()+i);
 	--i;
-
-	//std::cout<<"Killed walker\n";
 
       }
     }
@@ -118,9 +109,6 @@ void projector::annihilate(){
 	newWalkers.erase(newWalkers.begin()+j);
 	//j>i -> newWalkers.begin()+i is still the same element
 	newWalkers.erase(newWalkers.begin()+i);
-	
-	//std::cout<<"Annihilated walkers\n";
-	
 	--i;
 	break;
       }
@@ -132,9 +120,6 @@ void projector::annihilate(){
       if(checkAnnihilation(newWalkers[i],ensemble[j])){
 	ensemble.erase(ensemble.begin()+j);
 	newWalkers.erase(newWalkers.begin()+i);
-	
-	//std::cout<<"Annihilated walkers\n";
-	
 	--i;
 	break;
       }
@@ -154,33 +139,50 @@ void projector::annihilate(){
 }
 
 void projector::updateShift(){
-  double S=pars.getS();
-  double const dt=pars.getTimeStep()*pars.getA();
-  std::cout<<ensemble.size()<<" vs "<<ensembleSizeBackup<<std::endl;
+  double S{pars.getS()};
+  double const dt{pars.getTimeStep()*pars.getA()};
+  //  std::cout<<ensemble.size()<<" vs "<<ensembleSizeBackup<<std::endl;
   S-=pars.getDamping()/dt*log(ensemble.size()/static_cast<double>(ensembleSizeBackup));
   pars.setS(S);
   ensembleSizeBackup=ensemble.size();
 }
 
+void projector::updateAveragedShift(unsigned int i){
+  averagedShift = (averagedShift*i + pars.getS()*pars.getA())/(i+pars.getA());
+}
+
 void projector::fullProjection(unsigned int numSteps, unsigned int targetNumber){
-  int constN=0;
-  int adaptionCounter=0;
+  bool constN{false};
+  bool equilibrated{false};
+  unsigned int iEquil{500U};
+  unsigned int iConstN{0U};
+  int adaptionCounter{0};
   for(unsigned int i=0;i<numSteps;++i){
     prStep();
     if(ensemble.size()>=targetNumber && !constN){
-      constN=1;
+      constN=true;
+      iConstN=i;
       ensembleSizeBackup=ensemble.size();
     }
     if(constN){
       ++adaptionCounter;
+      if(!equilibrated and (i-iConstN)>iEquil){
+    	  equilibrated=true;
+    	  iConstN = i;
+	averagedShift = pars.getS();
+      }
       if(adaptionCounter%pars.getA()==0){
 	updateShift();
 	std::cout<<"New shift: "<<pars.getS()<<std::endl;
 	std::cout<<"Number of walkers: "<<ensemble.size()<<std::endl;
+	if(equilibrated){
+	  updateAveragedShift(i-iConstN);
+	}
 	adaptionCounter=0;
       }
     }
   }
+  std::cout<<"Energy estimate: "<<averagedShift<<std::endl;
 }
     
 void printEnsemble(std::vector<walker> const &ensemble){
@@ -189,3 +191,4 @@ void printEnsemble(std::vector<walker> const &ensemble){
     printState(it->getDeterminant());
   }
 }
+

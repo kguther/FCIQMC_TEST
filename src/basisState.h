@@ -22,6 +22,7 @@ class basisState{
 bool compareDeterminants(basisState const &a, basisState const &b);
 
 basisState generateRandomState(int nOrbitals);
+basisState generateRandomState(int nOrbitals, int nElectrons);
 inline bool operator==(basisState const &a, basisState const &b){
   if(a.getBasisSize()!=b.getBasisSize()){
     return false;

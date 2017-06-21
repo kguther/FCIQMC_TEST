@@ -11,13 +11,13 @@ void printState(basisState const &a);
 hamiltonian generateHubbard(int dim, double U, double t);
 
 int main(int argc, char **argv){
-  int const L=6;
-  int const sysSize=2*L;
-  parData testData(0.01,0.01,2,0.2,2);
-  double U=0.1;
-  double t=1;
+  int const L{6};
+  int const sysSize{2*L};
+  parData testData(0.5,0.005,3,.4,2);
+  double U{6};
+  double t{1};
   std::vector<int> occupations;
-  basisState testState=generateRandomState(sysSize);
+  basisState testState=generateRandomState(sysSize,L);
   std::cout<<"Initial ";
   printState(testState);
   std::cout<<std::endl;
@@ -33,7 +33,7 @@ int main(int argc, char **argv){
   std::cout<<std::endl;
   std::cout<<Hubbard.getMatrixElement(testComp,testState)<<std::endl;
   */
-  testSys.fullProjection(10000U,100U);
+  testSys.fullProjection(4000U,300U);
   std::cout<<"Initial ";
   printState(testState);
   std::cout<<std::endl;
